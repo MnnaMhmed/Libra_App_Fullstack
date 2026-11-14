@@ -3,5 +3,5 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/Libra-React-Frontend/'
+  base: '/Libra_App_Fullstack/'
 });

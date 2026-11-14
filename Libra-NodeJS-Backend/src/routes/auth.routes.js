@@ -1,0 +1,13 @@
+import { Router } from "express";
+import * as c from "../controllers/auth.controller.js";
+import { authenticate } from "../middleware/auth.js";
+import { validate } from "../middleware/validate.js";
+import { registerSchema, loginSchema, changePasswordSchema } from "../validation/schemas.js";
+const router = Router();
+router.post("/register", validate(registerSchema), c.register);
+router.post("/login", validate(loginSchema), c.login);
+router.post("/refresh", c.refresh);
+router.post("/logout", c.logout);
+router.get("/me", authenticate, c.me);
+router.patch("/change-password", authenticate, validate(changePasswordSchema), c.changePassword);
+export default router;

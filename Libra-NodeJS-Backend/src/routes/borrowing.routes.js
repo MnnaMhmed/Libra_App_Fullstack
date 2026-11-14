@@ -1,0 +1,12 @@
+import { Router } from "express";
+import * as c from "../controllers/borrowing.controller.js";
+import { validate } from "../middleware/validate.js";
+import { borrowingSchema, updateBorrowingSchema, idParamSchema } from "../validation/schemas.js";
+import { authorize } from "../middleware/auth.js";
+const router = Router();
+router.get("/", c.listBorrowings);
+router.post("/", authorize("ADMINISTRATOR", "LIBRARIAN"), validate(borrowingSchema), c.createBorrowing);
+router.patch("/:id/return", authorize("ADMINISTRATOR", "LIBRARIAN"), validate(idParamSchema), c.returnBorrowing);
+router.patch("/:id", authorize("ADMINISTRATOR", "LIBRARIAN"), validate(idParamSchema), validate(updateBorrowingSchema), c.updateBorrowing);
+router.delete("/:id", authorize("ADMINISTRATOR"), validate(idParamSchema), c.deleteBorrowing);
+export default router;

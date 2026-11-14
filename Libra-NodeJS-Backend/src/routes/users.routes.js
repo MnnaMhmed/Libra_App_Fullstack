@@ -1,0 +1,12 @@
+import { Router } from "express";
+import * as c from "../controllers/users.controller.js";
+import { authorize } from "../middleware/auth.js";
+import { validate } from "../middleware/validate.js";
+import { userCreateSchema, userUpdateSchema, idParamSchema } from "../validation/schemas.js";
+const router = Router();
+router.use(authorize("ADMINISTRATOR"));
+router.get("/", c.listUsers);
+router.post("/", validate(userCreateSchema), c.createUser);
+router.put("/:id", validate(idParamSchema), validate(userUpdateSchema), c.updateUser);
+router.delete("/:id", validate(idParamSchema), c.deleteUser);
+export default router;

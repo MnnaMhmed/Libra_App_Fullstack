@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMINISTRATOR
+  LIBRARIAN
+  STAFF
+}
+
+enum RecordStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum BookStatus {
+  AVAILABLE
+  UNAVAILABLE
+}
+
+enum BorrowingStatus {
+  BORROWED
+  RETURNED
+  OVERDUE
+}
+
+enum ActivityAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  BORROW
+  RETURN
+  REGISTER
+  PASSWORD_CHANGE
+}
+
+model User {
+  id              Int          @id @default(autoincrement())
+  fullName        String
+  email           String       @unique
+  passwordHash    String
+  role            UserRole     @default(STAFF)
+  status          RecordStatus @default(ACTIVE)
+  refreshTokens   RefreshToken[]
+  activityLogs    ActivityLog[]
+  wishlists       Wishlist[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+model RefreshToken {
+  id         Int      @id @default(autoincrement())
+  tokenHash  String   @unique
+  userId     Int
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model Member {
+  id          Int          @id @default(autoincrement())
+  firstName   String
+  lastName    String
+  email       String       @unique
+  phoneNumber String?
+  status      RecordStatus @default(ACTIVE)
+  borrowings  Borrowing[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Author {
+  id          Int        @id @default(autoincrement())
+  name        String
+  biography   String?
+  status      RecordStatus @default(ACTIVE)
+  bookAuthors BookAuthor[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Publisher {
+  id        Int      @id @default(autoincrement())
+  name      String
+  address   String?
+  email     String?
+  status    RecordStatus @default(ACTIVE)
+  books     Book[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id               Int        @id @default(autoincrement())
+  name             String     @unique
+  parentCategoryId Int?
+  status           RecordStatus @default(ACTIVE)
+  parent           Category?  @relation("CategoryTree", fields: [parentCategoryId], references: [id], onDelete: SetNull)
+  children         Category[] @relation("CategoryTree")
+  bookCategories   BookCategory[]
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+}
+
+model Book {
+  id              Int            @id @default(autoincrement())
+  title           String
+  isbn            String         @unique
+  edition         String?
+  publicationYear Int?
+  language        String         @default("English")
+  publisherId     Int?
+  status          BookStatus     @default(AVAILABLE)
+  coverImageUrl   String?
+  summary         String?
+  publisher       Publisher?     @relation(fields: [publisherId], references: [id], onDelete: SetNull)
+  bookAuthors     BookAuthor[]
+  bookCategories  BookCategory[]
+  borrowings      Borrowing[]
+  wishlistedBy    Wishlist[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  @@index([title])
+  @@index([publisherId])
+}
+
+model BookAuthor {
+  bookId   Int
+  authorId Int
+  book     Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  @@id([bookId, authorId])
+}
+
+model BookCategory {
+  bookId     Int
+  categoryId Int
+  book       Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  @@id([bookId, categoryId])
+}
+
+model Borrowing {
+  id         Int             @id @default(autoincrement())
+  bookId     Int
+  memberId   Int
+  borrowDate DateTime        @default(now())
+  dueDate    DateTime
+  returnDate DateTime?
+  book       Book            @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  member     Member          @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  @@index([bookId, returnDate])
+  @@index([memberId])
+  @@index([dueDate])
+}
+
+model Wishlist {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  bookId    Int
+  createdAt DateTime @default(now())
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, bookId])
+  @@index([userId])
+}
+
+model ActivityLog {
+  id         Int            @id @default(autoincrement())
+  systemUserId Int?
+  action     ActivityAction
+  entityName String
+  entityId   Int?
+  details    Json?
+  timestamp  DateTime       @default(now())
+  user       User?          @relation(fields: [systemUserId], references: [id], onDelete: SetNull)
+  @@index([timestamp])
+  @@index([entityName, entityId])
+}

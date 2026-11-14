@@ -1,0 +1,12 @@
+import { Router } from "express";
+import * as c from "../controllers/books.controller.js";
+import { validate } from "../middleware/validate.js";
+import { bookSchema, idParamSchema } from "../validation/schemas.js";
+import { authorize } from "../middleware/auth.js";
+const router = Router();
+router.get("/", c.listBooks);
+router.get("/:id", validate(idParamSchema), c.getBook);
+router.post("/", authorize("ADMINISTRATOR", "LIBRARIAN"), validate(bookSchema), c.createBook);
+router.put("/:id", authorize("ADMINISTRATOR", "LIBRARIAN"), validate(idParamSchema), validate(bookSchema), c.updateBook);
+router.delete("/:id", authorize("ADMINISTRATOR"), validate(idParamSchema), c.deleteBook);
+export default router;
